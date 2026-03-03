@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Cliente RAG - prueba</title>
+  <style>
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; padding: 24px; max-width: 900px; margin: auto; }
+    label { display:block; margin-top:12px; font-weight:600; }
+    textarea { width:100%; min-height:90px; font-family:monospace; padding:8px; margin-top:6px; }
+    button { margin-top:10px; padding:8px 14px; border-radius:6px; cursor:pointer; }
+    pre { background:#111; color:#eee; padding:12px; border-radius:6px; overflow:auto; max-height:420px; }
+    .meta { margin-top:10px; color:#444; }
+    .error { color: #b00020; font-weight:600; }
+    .ok { color: #046307; font-weight:600; }
+    .nav-buttons { margin-bottom:20px; }
+    .module { display:none; margin-top:20px; }
+    .active { display:block; }
+  </style>
+</head>
+<body>
+
+  <h1>Cliente RAG</h1>
+
+  <div class="nav-buttons">
+    <button onclick="showModule('consulta')">Módulo de Consulta</button>
+    <button onclick="showModule('carga')">Módulo de Carga de Archivos</button>
+  </div>
+
+  <!-- ========================= -->
+  <!-- 🔹 MÓDULO DE CONSULTA -->
+  <!-- ========================= -->
+  <div id="consulta" class="module active">
+    <h2>Consulta RAG</h2>
+
+    <label for="prompt">Prompt</label>
+    <textarea id="prompt">¿Cómo se usa Express.js en mi app.js y qué es el RAG?</textarea>
+
+    <div>
+      <button id="sendBtn">Enviar POST</button>
+      <button id="clearBtn">Limpiar salida</button>
+    </div>
+
+    <div class="meta">
+      <span>Endpoint: <code>/rag/query</code></span>
+      &nbsp;•&nbsp;
+      <span id="status">Estado: —</span>
+    </div>
+
+    <label>Salida:</label>
+    <pre id="output">—</pre>
+  </div>
+
+  <!-- ========================= -->
+  <!-- 🔹 MÓDULO DE CARGA -->
+  <!-- ========================= -->
+  <div id="carga" class="module">
+    <h2>Carga de Archivos</h2>
+
+    <div>
+      <button id="uploadBtn">Enviar ruta de archivo</button>
+    </div>
+
+    <div class="meta">
+      <span>Endpoint: <code>/upload</code></span>
+      &nbsp;•&nbsp;
+      <span id="uploadStatus">Estado: —</span>
+    </div>
+
+    <label>Resultado:</label>
+    <pre id="uploadOutput">—</pre>
+  </div>
+
+<script>
+  const BASE_URL = "http://10.9.26.147:5000";
+
+  function showModule(id) {
+    document.querySelectorAll('.module').forEach(m => m.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  }
+
+  // ==============================
+  // 🔹 CONSULTA
+  // ==============================
+
+  const promptEl = document.getElementById('prompt');
+  const outputEl = document.getElementById('output');
+  const statusEl = document.getElementById('status');
+  const sendBtn = document.getElementById('sendBtn');
+  const clearBtn = document.getElementById('clearBtn');
+
+  function setStatus(text, ok = null) {
+    statusEl.textContent = 'Estado: ' + text;
+    statusEl.className = ok === true ? 'ok' : (ok === false ? 'error' : '');
+  }
+
+  clearBtn.addEventListener('click', () => {
+    outputEl.textContent = '—';
+    setStatus('—');
+  });
+
+  sendBtn.addEventListener('click', async () => {
+    const PROMPT = promptEl.value.trim();
+    if (!PROMPT) {
+      alert('Escribe un prompt antes de enviar.');
+      return;
+    }
+
+    setStatus('Enviando...');
+    outputEl.textContent = 'Enviando petición...';
+
+    try {
+      const resp = await fetch(`${BASE_URL}/rag/query`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: PROMPT })
+      });
+
+      const text = await resp.text();
+      setStatus(resp.status, resp.ok);
+
+      try {
+        outputEl.textContent = JSON.stringify(JSON.parse(text), null, 2);
+      } catch {
+        outputEl.textContent = text;
+      }
+
+    } catch (err) {
+      setStatus('Error', false);
+      outputEl.textContent = err.message;
+    }
+  });
+
+  // ==============================
+  // 🔹 CARGA
+  // ==============================
+
+  const uploadBtn = document.getElementById('uploadBtn');
+  const uploadStatus = document.getElementById('uploadStatus');
+  const uploadOutput = document.getElementById('uploadOutput');
+
+  uploadBtn.addEventListener('click', async () => {
+
+    const ruta = prompt("Escribe la ruta completa del archivo:");
+
+    if (!ruta) {
+      alert("Debes escribir una ruta.");
+      return;
+    }
+
+    uploadStatus.textContent = "Estado: Enviando...";
+    uploadOutput.textContent = "Enviando ruta...";
+
+    try {
+      const resp = await fetch(`${BASE_URL}/upload`, {
+        method: "POST",
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ruta: ruta })
+      });
+
+      const text = await resp.text();
+      uploadStatus.textContent = `Estado: ${resp.status}`;
+
+      try {
+        uploadOutput.textContent = JSON.stringify(JSON.parse(text), null, 2);
+      } catch {
+        uploadOutput.textContent = text;
+      }
+
+    } catch (err) {
+      uploadStatus.textContent = "Estado: Error";
+      uploadOutput.textContent = err.message;
+    }
+  });
+
+</script>
+
+</body>
+</html>

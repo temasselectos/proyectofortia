@@ -1,0 +1,18 @@
+# Python
+entorno/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Node.js
+node_modules/
+
+# Variables de entorno (secretos)
+.env
+*.env
+
+# Sistemas operativos
+.DS_Store
+Thumbs.db
