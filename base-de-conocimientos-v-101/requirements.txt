@@ -1,0 +1,4 @@
+# Requisitos del proyecto (Node.js)
+# Instalar con: npm install
+express
+sqlite3
