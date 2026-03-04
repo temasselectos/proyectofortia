@@ -31,10 +31,13 @@
   <!-- 🔹 MÓDULO DE CONSULTA -->
   <!-- ========================= -->
   <div id="consulta" class="module active">
-    <h2>Consulta RAG</h2>
+    <h2>Consulta RAG (2 Prompts)</h2>
 
-    <label for="prompt">Prompt</label>
-    <textarea id="prompt">¿Cómo se usa Express.js en mi app.js y qué es el RAG?</textarea>
+    <label for="prompt1">Prompt 1</label>
+    <textarea id="prompt1">¿Qué es RAG?</textarea>
+
+    <label for="prompt2">Prompt 2</label>
+    <textarea id="prompt2">¿Qué son embeddings?</textarea>
 
     <div>
       <button id="sendBtn">Enviar POST</button>
@@ -47,8 +50,11 @@
       <span id="status">Estado: —</span>
     </div>
 
-    <label>Salida:</label>
-    <pre id="output">—</pre>
+    <label>Respuesta Prompt 1:</label>
+    <pre id="output1">—</pre>
+
+    <label>Respuesta Prompt 2:</label>
+    <pre id="output2">—</pre>
   </div>
 
   <!-- ========================= -->
@@ -80,11 +86,13 @@
   }
 
   // ==============================
-  // 🔹 CONSULTA
+  // 🔹 CONSULTA DOBLE PROMPT
   // ==============================
 
-  const promptEl = document.getElementById('prompt');
-  const outputEl = document.getElementById('output');
+  const prompt1El = document.getElementById('prompt1');
+  const prompt2El = document.getElementById('prompt2');
+  const output1El = document.getElementById('output1');
+  const output2El = document.getElementById('output2');
   const statusEl = document.getElementById('status');
   const sendBtn = document.getElementById('sendBtn');
   const clearBtn = document.getElementById('clearBtn');
@@ -95,39 +103,54 @@
   }
 
   clearBtn.addEventListener('click', () => {
-    outputEl.textContent = '—';
+    output1El.textContent = '—';
+    output2El.textContent = '—';
     setStatus('—');
   });
 
   sendBtn.addEventListener('click', async () => {
-    const PROMPT = promptEl.value.trim();
-    if (!PROMPT) {
-      alert('Escribe un prompt antes de enviar.');
+
+    const PROMPT1 = prompt1El.value.trim();
+    const PROMPT2 = prompt2El.value.trim();
+
+    if (!PROMPT1 && !PROMPT2) {
+      alert('Escribe al menos un prompt.');
       return;
     }
 
     setStatus('Enviando...');
-    outputEl.textContent = 'Enviando petición...';
+    output1El.textContent = 'Procesando...';
+    output2El.textContent = 'Procesando...';
 
     try {
       const resp = await fetch(`${BASE_URL}/rag/query`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: PROMPT })
+        body: JSON.stringify({
+          prompt1: PROMPT1,
+          prompt2: PROMPT2
+        })
       });
 
-      const text = await resp.text();
+      const data = await resp.json();
       setStatus(resp.status, resp.ok);
 
-      try {
-        outputEl.textContent = JSON.stringify(JSON.parse(text), null, 2);
-      } catch {
-        outputEl.textContent = text;
+      if (data.respuesta_prompt1) {
+        output1El.textContent = JSON.stringify(data.respuesta_prompt1, null, 2);
+      } else {
+        output1El.textContent = '—';
+      }
+
+      if (data.respuesta_prompt2) {
+        output2El.textContent = JSON.stringify(data.respuesta_prompt2, null, 2);
+      } else {
+        output2El.textContent = '—';
       }
 
     } catch (err) {
       setStatus('Error', false);
-      outputEl.textContent = err.message;
+      output1El.textContent = err.message;
+      output2El.textContent = err.message;
     }
   });
 
