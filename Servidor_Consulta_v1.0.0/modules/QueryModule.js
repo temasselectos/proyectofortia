@@ -1,42 +1,68 @@
 const axios = require('axios');
 require('dotenv').config();
 
-/**
- * Recuperación de contexto desde la Base de Conocimiento (BDC)
- */
+function extractKeywords(prompt) {
+    const stopwords = [
+        'el', 'la', 'los', 'las', 'un', 'una', 'unos', 'unas',
+        'de', 'del', 'al', 'a', 'en', 'con', 'por', 'para',
+        'es', 'son', 'fue', 'ser', 'y', 'o', 'que', 'se',
+        'no', 'si', 'su', 'sus', 'lo', 'como', 'más', 'pero',
+        'me', 'te', 'le', 'nos', 'sobre', 'entre', 'este', 'esta',
+        'qué', 'cuál', 'cómo', 'dónde', 'quién', 'quien', 'cuándo'
+    ];
+
+    return prompt
+        .toLowerCase()
+        .replace(/[^\w\sáéíóúñü]/g, '')
+        .split(/\s+/)
+        .filter(word => word.length > 2 && !stopwords.includes(word));
+}
+
 async function retrieveContextFromBDC(prompt) {
-    console.log(`[Lógica RAG] -> Llamando a BDC con el prompt: "${prompt}"`);
 
     const baseUrl = 'http://10.9.26.92:3000';
     const BDC_URL = `${baseUrl}/conocimientos`;
 
-    try {
-        const response = await axios.post(
-            BDC_URL,
-            { prompt: prompt },
-            { timeout: 15000 }
-        );
+    const keywords = extractKeywords(prompt);
+    console.log(`[RAG] Palabras clave extraídas: ${keywords.join(', ')}`);
+    const modes = ["strict", "flexible"];
 
-        console.log("[Lógica RAG] -> Respuesta BDC:", response.data);
+    for (let i = 0; i < modes.length; i++) {
 
-        return {
-            context: response.data.context || "",
-            sources: response.data.sources || []
-        };
+        const mode = modes[i];
+        console.log(`[RAG] Intento ${i + 1} - Modo: ${mode}`);
 
-    } catch (error) {
-        console.error("[BDC] Error:", error.message);
-        return {
-            context: "",
-            sources: [],
-            error: "No se pudo recuperar el contexto desde la BDC"
-        };
+        try {
+
+            const response = await axios.post(
+                BDC_URL,
+                {
+                    keywords,
+                    mode
+                },
+                { timeout: 20000 }
+            );
+
+            const context = response.data.context || "";
+
+            if (context.trim().length > 0) {
+                console.log(`[RAG] Contexto encontrado en modo ${mode}`);
+                return response.data;
+            }
+
+        } catch (error) {
+            console.error(`[RAG] Error en modo ${mode}:`, error.message);
+        }
     }
+
+    return {
+        context: "",
+        sources: [],
+        error: "No se encontró información"
+    };
 }
 
-/**
- * Generación de respuesta usando Gemini LLM
- */
+//Generación de respuesta usando Gemini LLM
 async function generateWithLLM(originalPrompt, context) {
     console.log('[Lógica RAG] -> Enviando prompt con contexto a Gemini API...');
 

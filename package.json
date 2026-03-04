@@ -1,0 +1,24 @@
+{
+  "dependencies": {
+    "express": "^5.2.1"
+  },
+  "name": "proyectofortia",
+  "version": "1.0.0",
+  "main": "index.js",
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/temasselectos/proyectofortia.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/temasselectos/proyectofortia/issues"
+  },
+  "homepage": "https://github.com/temasselectos/proyectofortia#readme",
+  "description": ""
+}
