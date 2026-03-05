@@ -2,3 +2,4 @@
 # Instalar con: npm install
 express
 sqlite3
+franc-min langs
